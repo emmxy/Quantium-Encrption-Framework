@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}File Decryption - Quantum-Resistant PKI{% endblock %}
+
+{% block content %}
+<h1 class="page-title">File Decryption</h1>
+
+<!-- File Upload Area -->
+<div class="file-upload-area" id="fileUploadArea">
+    <div class="file-icon">📄</div>
+    <div class="file-upload-text">
+        <h3>Drag and drop encrypted file (.bin) and metadata (.json) here</h3>
+        <p>Or click to browse</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('encryptedFileInput').click()">Browse Encrypted File</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('metadataFileInput').click()">Browse Metadata File</button>
+        </div>
+        <input type="file" id="encryptedFileInput" style="display: none;" accept=".bin">
+        <input type="file" id="metadataFileInput" style="display: none;" accept=".json">
+    </div>
+</div>
+
+<!-- File Information Table -->
+<div class="card" id="fileInfoCard" style="display: none;">
+    <h2 class="card-title">File Information</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Type</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="fileInfoBody">
+        </tbody>
+    </table>
+</div>
+
+<!-- Decryption Progress -->
+<div class="card" id="progressCard" style="display: none;">
+    <h2 class="card-title">Decryption Progress</h2>
+    <div class="progress-indicator">
+        <div class="progress-indicator-fill" id="progressBar" style="width: 0%;"></div>
+    </div>
+    <div style="text-align: center; margin-top: 1rem; color: var(--text-secondary);" id="progressText">0%</div>
+</div>
+
+<!-- Action Buttons -->
+<div style="display: flex; gap: 1rem; margin-top: 2rem;">
+    <button class="btn btn-primary" id="decryptBtn" style="display: none;">Decrypt File</button>
+    <button class="btn btn-primary" id="downloadBtn" style="display: none; margin-left: auto;">Download</button>
+</div>
+
+<!-- Private Key Input -->
+<div class="card" style="margin-top: 2rem;">
+    <h2 class="card-title">Key Selection</h2>
+    <div>
+        <label class="form-label" for="privateKeyPath">Private Key File Path</label>
+        <input type="text" class="form-control" id="privateKeyPath" placeholder="keys/private_key_20240101_120000.key">
+    </div>
+</div>
+
+<!-- Result Display -->
+<div id="result" style="display: none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedEncryptedFile = null;
+let selectedMetadataFile = null;
+let decryptedFileData = null;
+
+const fileUploadArea = document.getElementById('fileUploadArea');
+const encryptedFileInput = document.getElementById('encryptedFileInput');
+const metadataFileInput = document.getElementById('metadataFileInput');
+const fileInfoCard = document.getElementById('fileInfoCard');
+const fileInfoBody = document.getElementById('fileInfoBody');
+const progressCard = document.getElementById('progressCard');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const decryptBtn = document.getElementById('decryptBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+
+// Drag and drop handlers
+fileUploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.add('dragover');
+});
+
+fileUploadArea.addEventListener('dragleave', () => {
+    fileUploadArea.classList.remove('dragover');
+});
+
+fileUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.name.endsWith('.bin')) {
+            selectedEncryptedFile = file;
+        } else if (file.name.endsWith('.json')) {
+            selectedMetadataFile = file;
+        }
+    }
+    updateFileInfo();
+});
+
+// File input handlers
+encryptedFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        selectedEncryptedFile = e.target.files[0];
+        updateFileInfo();
+    }
+});
+
+metadataFileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        selectedMetadataFile = e.target.files[0];
+        updateFileInfo();
+    }
+});
+
+function updateFileInfo() {
+    let html = '';
+    let readyCount = 0;
+    
+    if (selectedEncryptedFile) {
+        const encryptedSize = (selectedEncryptedFile.size / (1024 * 1024)).toFixed(2);
+        html += `
+            <tr>
+                <td>${selectedEncryptedFile.name}</td>
+                <td>${encryptedSize} MB</td>
+                <td>BIN</td>
+                <td><span class="badge badge-active">Ready</span></td>
+            </tr>
+        `;
+        readyCount++;
+    }
+    
+    if (selectedMetadataFile) {
+        const metadataSize = (selectedMetadataFile.size / 1024).toFixed(2);
+        html += `
+            <tr>
+                <td>${selectedMetadataFile.name}</td>
+                <td>${metadataSize} KB</td>
+                <td>JSON</td>
+                <td><span class="badge badge-active">Ready</span></td>
+            </tr>
+        `;
+        readyCount++;
+    }
+    
+    if (html !== '') {
+        fileInfoBody.innerHTML = html;
+        fileInfoCard.style.display = 'block';
+    }
+    
+    if (readyCount === 2) {
+        decryptBtn.style.display = 'block';
+    } else {
+        decryptBtn.style.display = 'none';
+    }
+}
+
+// Decrypt handler
+decryptBtn.addEventListener('click', async () => {
+    if (!selectedEncryptedFile || !selectedMetadataFile) {
+        alert('Please select both encrypted file and metadata file');
+        return;
+    }
+    
+    const privateKeyPath = document.getElementById('privateKeyPath').value;
+    if (!privateKeyPath) {
+        alert('Please enter a private key path');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('encrypted_file', selectedEncryptedFile);
+    formData.append('metadata_file', selectedMetadataFile);
+    formData.append('private_key_path', privateKeyPath);
+    
+    progressCard.style.display = 'block';
+    decryptBtn.disabled = true;
+    
+    // Simulate progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 10;
+        if (progress <= 100) {
+            progressBar.style.width = progress + '%';
+            progressText.textContent = progress + '%';
+        }
+    }, 200);
+    
+    try {
+        const response = await fetch('/decrypt_file', {
+            method: 'POST',
+            body: formData
+        });
+        
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        progressText.textContent = '100%';
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            decryptedFileData = result;
+            fileInfoBody.innerHTML = `
+                <tr>
+                    <td>${result.filename}</td>
+                    <td>-</td>
+                    <td>${result.filename.split('.').pop().toUpperCase()}</td>
+                    <td><span class="badge badge-resolved">Decrypted</span></td>
+                </tr>
+            `;
+            downloadBtn.style.display = 'block';
+            alert('File decrypted successfully!');
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        clearInterval(progressInterval);
+        alert('Error: ' + error.message);
+    } finally {
+        decryptBtn.disabled = false;
+    }
+});
+
+// Download handler
+downloadBtn.addEventListener('click', () => {
+    if (decryptedFileData) {
+        window.location.href = `/download?file=${encodeURIComponent(decryptedFileData.decrypted_file_path)}`;
+    }
+});
+</script>
+{% endblock %}

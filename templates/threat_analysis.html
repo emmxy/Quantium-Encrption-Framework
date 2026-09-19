@@ -1,0 +1,795 @@
+{% extends "base.html" %}
+
+{% block title %}Threat Analysis - Quantum-Resistant PKI{% endblock %}
+
+{% block content %}
+<!-- Main Dashboard Grid Container -->
+<div class="ta-dashboard-container">
+    
+    <!-- TOP ROW -->
+    <div class="ta-row ta-row-top">
+        <!-- Open Incidents -->
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>Open Incidents</h3>
+                <span class="ta-icon-expand">⛶</span>
+            </div>
+            <div class="ta-incidents-body">
+                <div class="ta-big-number">{{ threats|length }}</div>
+                <div class="ta-incidents-breakdown">
+                    <div class="ta-incident-stat">
+                        <span class="ta-stat-label">High</span>
+                        <span class="ta-stat-value ta-red">{{ threats|selectattr('severity', 'equalto', 'high')|list|length + threats|selectattr('severity', 'equalto', 'critical')|list|length }}</span>
+                    </div>
+                    <div class="ta-incident-stat">
+                        <span class="ta-stat-label">Medium</span>
+                        <span class="ta-stat-value ta-orange">{{ threats|selectattr('severity', 'equalto', 'medium')|list|length }}</span>
+                    </div>
+                    <div class="ta-incident-stat">
+                        <span class="ta-stat-label">Low</span>
+                        <span class="ta-stat-value ta-blue">{{ threats|selectattr('severity', 'equalto', 'low')|list|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risks Assessment -->
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>Risks Assessment ({{ threats[:4]|length }})</h3>
+                <span class="ta-icon-expand">⛶</span>
+            </div>
+            <div class="ta-panel-body">
+                <table class="ta-table">
+                    <thead>
+                        <tr>
+                            <th>Issue</th>
+                            <th>Description</th>
+                            <th>Severity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if threats %}
+                            {% for threat in threats[:4] %}
+                            <tr>
+                                <td>{{ threat.event_type|replace('_', ' ')|title }}</td>
+                                <td class="ta-truncate">{{ threat.explanation }}</td>
+                                <td><span class="ta-badge ta-badge-{{ threat.severity }}">{{ threat.severity|title }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: #888;">No active risks detected.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MIDDLE ROW -->
+    <div class="ta-row ta-row-mid">
+        <!-- Network Activity -->
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>Network Activity</h3>
+                <span class="ta-icon-expand">⛶</span>
+            </div>
+            <div class="ta-panel-body ta-chart-container">
+                <canvas id="networkActivityChart"></canvas>
+            </div>
+            <div class="ta-chart-legend">
+                <span class="ta-legend-item"><span class="ta-dot ta-dot-purple"></span> Server requests</span>
+                <span class="ta-legend-item"><span class="ta-dot ta-dot-grey"></span> File transfers</span>
+                <span class="ta-legend-item"><span class="ta-dot ta-dot-pink"></span> App usage</span>
+            </div>
+        </div>
+
+        <!-- Vulnerable Endpoints -->
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>Vulnerable endpoints - Last 24h</h3>
+                <span class="ta-icon-expand">⛶</span>
+            </div>
+            <div class="ta-endpoints-body">
+                <div class="ta-endpoints-list" id="endpointsList">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="ta-donut-container">
+                    <canvas id="endpointsChart"></canvas>
+                    <div class="ta-donut-center">
+                        <span class="ta-donut-number" id="totalEndpoints">0</span>
+                        <span class="ta-donut-label">Total</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="ta-row ta-row-bottom">
+        <!-- Suspicious Users Behaviour -->
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>Suspicious Users Behaviour</h3>
+                <span class="ta-icon-expand">⛶</span>
+            </div>
+            <div class="ta-panel-body">
+                <table class="ta-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Last login</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suspiciousUsersTable">
+                        <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- News Feed -->
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>News Feed</h3>
+                <span class="ta-icon-expand">⛶</span>
+            </div>
+            <div class="ta-panel-body">
+                <table class="ta-table">
+                    <thead>
+                        <tr>
+                            <th>Actor</th>
+                            <th>Type</th>
+                            <th>Tactics</th>
+                        </tr>
+                    </thead>
+                    <tbody id="newsFeedTable">
+                        <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- DETAILED THREAT ANALYSIS ROW -->
+    <div class="ta-row">
+        <div class="ta-panel">
+            <div class="ta-panel-header">
+                <h3>Detailed Threat Analysis & Recommendations</h3>
+            </div>
+            <div class="ta-detailed-threats">
+                {% if threats %}
+                    {% for threat in threats %}
+                    <div class="ta-threat-card" data-threat-id="{{ threat.threat_id }}">
+                        <div class="ta-threat-card-header">
+                            <span class="ta-badge ta-badge-{{ threat.severity }}">{{ threat.severity|title }}</span>
+                            <span class="ta-threat-id">{{ threat.threat_id }} | {{ threat.timestamp[:16].replace('T', ' ') }}</span>
+                        </div>
+                        <div class="ta-threat-card-body">
+                            <div class="ta-threat-info">
+                                <span class="ta-threat-label">Event Type:</span>
+                                <span>{{ threat.event_type|replace('_', ' ')|title }}</span>
+                            </div>
+                            <div class="ta-threat-info">
+                                <span class="ta-threat-label">User / IP:</span>
+                                <span class="ta-threat-user">{{ threat.user_id }}</span>
+                            </div>
+                            <div class="ta-threat-info">
+                                <span class="ta-threat-label">Risk Score:</span>
+                                <span class="ta-score-badge" style="background-color: {% if threat.risk_score > 50 %}#E06C75{% elif threat.risk_score > 30 %}#D19A66{% else %}#61AFEF{% endif %}; min-width: 40px; padding: 0.1rem 0.5rem;">
+                                    {{ threat.risk_score }}/100
+                                </span>
+                            </div>
+                            
+                            <div class="ta-threat-details">
+                                <div class="ta-threat-label">Explanation:</div>
+                                <div class="ta-threat-text">{{ threat.explanation }}</div>
+                            </div>
+                            <div class="ta-threat-details">
+                                <div class="ta-threat-label">Recommendation:</div>
+                                <div class="ta-threat-text" style="border-left: 3px solid #9D72FF;">{{ threat.recommendation }}</div>
+                            </div>
+                            
+                            <div class="ta-threat-actions">
+                                {% if threat.risk_score > 50 %}
+                                    <button class="ta-btn ta-btn-disabled" disabled>System Auto-Defended</button>
+                                {% else %}
+                                    <button class="ta-btn ta-btn-danger" onclick="blockIp('{{ threat.user_id }}', this)">Block IP (Anomaly)</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; color: #888; padding: 2rem;">No active threats or anomalies to display.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Scope styles specifically for the Threat Analysis Dashboard */
+    .ta-dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1rem 0;
+        color: #E2E8F0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .ta-row {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .ta-row-top {
+        grid-template-columns: 1fr 2fr;
+    }
+
+    .ta-row-mid, .ta-row-bottom {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ta-panel {
+        background-color: #333333;
+        border-radius: 8px;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .ta-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid #4a4a4a;
+        padding-bottom: 0.5rem;
+    }
+
+    .ta-panel-header h3 {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0;
+        color: #F8FAFC;
+    }
+
+    .ta-icon-expand {
+        cursor: pointer;
+        color: #94A3B8;
+        font-size: 1.2rem;
+    }
+
+    /* Top Left: Incidents */
+    .ta-incidents-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        justify-content: space-between;
+    }
+
+    .ta-big-number {
+        font-size: 5rem;
+        font-weight: 400;
+        line-height: 1;
+        margin-bottom: 1rem;
+        color: #FFFFFF;
+    }
+
+    .ta-incidents-breakdown {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .ta-incident-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ta-stat-label {
+        font-size: 0.95rem;
+        color: #CBD5E1;
+    }
+
+    .ta-stat-value {
+        font-size: 1.8rem;
+        font-weight: 500;
+    }
+
+    .ta-red { color: #E06C75; }
+    .ta-orange { color: #D19A66; }
+    .ta-blue { color: #61AFEF; }
+
+    /* Tables */
+    .ta-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .ta-table th {
+        text-align: left;
+        color: #E2E8F0;
+        font-weight: 500;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #4a4a4a;
+    }
+
+    .ta-table td {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #4a4a4a;
+        color: #CBD5E1;
+    }
+
+    .ta-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ta-truncate {
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Badges */
+    .ta-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #FFFFFF;
+    }
+    
+    .ta-badge-critical, .ta-badge-high { background-color: #E06C75; }
+    .ta-badge-medium { background-color: #D19A66; }
+    .ta-badge-low { background-color: #61AFEF; }
+
+    /* Network Activity Chart */
+    .ta-chart-container {
+        position: relative;
+        height: 200px;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .ta-chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        font-size: 0.85rem;
+        color: #94A3B8;
+    }
+
+    .ta-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .ta-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .ta-dot-purple { background-color: #9D72FF; }
+    .ta-dot-grey { background-color: #A0AEC0; }
+    .ta-dot-pink { background-color: #F472B6; }
+
+    /* Endpoints Donut */
+    .ta-endpoints-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 100%;
+    }
+
+    .ta-endpoints-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+        font-size: 0.85rem;
+        color: #CBD5E1;
+        flex: 1;
+    }
+
+    .ta-endpoints-list .ta-legend-item {
+        margin-bottom: 0;
+    }
+
+    .ta-donut-container {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        flex-shrink: 0;
+        margin-left: 1rem;
+    }
+
+    .ta-donut-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ta-donut-number {
+        font-size: 2rem;
+        font-weight: 500;
+        color: #FFFFFF;
+        line-height: 1;
+    }
+
+    .ta-donut-label {
+        font-size: 0.8rem;
+        color: #CBD5E1;
+    }
+
+    /* User Score Bars */
+    .ta-score-badge {
+        display: inline-block;
+        padding: 0.2rem 1rem;
+        border-radius: 4px;
+        font-weight: 500;
+        color: #FFFFFF;
+        text-align: center;
+        min-width: 60px;
+    }
+
+    /* Detailed Threat Cards */
+    .ta-detailed-threats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .ta-threat-card {
+        background-color: #2A2A2A;
+        border: 1px solid #4a4a4a;
+        border-radius: 8px;
+        padding: 1.25rem;
+        transition: all 0.3s;
+    }
+
+    .ta-threat-card:hover {
+        border-color: #9D72FF;
+        box-shadow: 0 4px 12px rgba(157, 114, 255, 0.15);
+    }
+
+    .ta-threat-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #4a4a4a;
+    }
+
+    .ta-threat-id {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #94A3B8;
+    }
+
+    .ta-threat-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .ta-threat-label {
+        color: #94A3B8;
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .ta-threat-details {
+        margin-top: 1rem;
+    }
+
+    .ta-threat-text {
+        background-color: #1F1F1F;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #CBD5E1;
+        line-height: 1.5;
+    }
+    
+    .ta-threat-actions {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .ta-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .ta-btn-danger {
+        background-color: #E06C75;
+        color: white;
+    }
+
+    .ta-btn-danger:hover {
+        background-color: #C55C65;
+    }
+
+    .ta-btn-disabled {
+        background-color: #4a4a4a;
+        color: #888;
+        cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .ta-row-top, .ta-row-mid, .ta-row-bottom {
+            grid-template-columns: 1fr;
+        }
+        .ta-endpoints-body {
+            flex-direction: column-reverse;
+            gap: 2rem;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Utility to format dates
+    function formatDate(isoString) {
+        if (!isoString) return 'N/A';
+        const d = new Date(isoString);
+        return d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Function to manually block IP
+    function blockIp(ipAddress, btnElement) {
+        if (!confirm(`Are you sure you want to permanently block IP: ${ipAddress}?`)) {
+            return;
+        }
+        
+        btnElement.disabled = true;
+        btnElement.innerText = 'Blocking...';
+        
+        fetch('/api/block_ip', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ip_address: ipAddress })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                btnElement.className = 'ta-btn ta-btn-disabled';
+                btnElement.innerText = 'Blocked';
+                alert(data.message);
+                // Optionally refresh data
+                fetchData();
+            } else {
+                btnElement.disabled = false;
+                btnElement.innerText = 'Block IP (Anomaly)';
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btnElement.disabled = false;
+            btnElement.innerText = 'Block IP (Anomaly)';
+            alert('Failed to communicate with server.');
+        });
+    }
+
+    // Chart Global Defaults
+    Chart.defaults.color = '#94A3B8';
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+    // 1. Initialize Network Activity Chart (Line)
+    function initNetworkChart() {
+        const ctx = document.getElementById('networkActivityChart').getContext('2d');
+        
+        // Simulating data to match the mockup aesthetic
+        const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const serverRequests = [40, 45, 55, 60, 75, 80, 95];
+        const fileTransfers = [30, 32, 40, 48, 55, 65, 75];
+        const appUsage = [20, 25, 22, 28, 25, 30, 25];
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Server requests',
+                        data: serverRequests,
+                        borderColor: '#9D72FF',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'File transfers',
+                        data: fileTransfers,
+                        borderColor: '#A0AEC0',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'App usage',
+                        data: appUsage,
+                        borderColor: '#F472B6',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false } // Custom legend is in HTML
+                },
+                scales: {
+                    x: {
+                        grid: { display: false, drawBorder: false }
+                    },
+                    y: {
+                        display: false, // Hide Y axis like in the mockup
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Fetch data for Dynamic Tables and Donut Chart
+    function fetchData() {
+        // Fetch active sessions for Vulnerable Endpoints and Suspicious Users
+        fetch('/api/sessions')
+            .then(res => res.json())
+            .then(data => {
+                const sessions = data.sessions || {};
+                const userIds = Object.keys(sessions);
+                
+                // Update Suspicious Users Table
+                const usersTbody = document.getElementById('suspiciousUsersTable');
+                if (userIds.length === 0) {
+                    usersTbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No suspicious activity detected.</td></tr>';
+                } else {
+                    // Sort by risk score descending
+                    const sortedSessions = userIds.map(id => ({id, ...sessions[id]}))
+                        .sort((a, b) => b.risk_score - a.risk_score)
+                        .slice(0, 5); // Take top 5
+                        
+                    usersTbody.innerHTML = sortedSessions.map(s => {
+                        const score = Math.floor(s.risk_score * 10); // scale 0-100 to look like mockup (e.g. 609)
+                        let bg = '#E06C75'; // Red
+                        if (score < 500) bg = '#D19A66'; // Orange
+                        if (score < 300) bg = '#61AFEF'; // Blue
+                        
+                        // Fake a last login time if none exists
+                        const lastLogin = s.last_activity ? new Date(s.last_activity).toLocaleDateString('en-GB') : '29/04/23';
+                        const arrow = score >= 600 ? '⌃' : '⌄';
+                        const arrowColor = score >= 600 ? '#E06C75' : '#61AFEF';
+
+                        return `
+                            <tr>
+                                <td>${s.id} <span style="color: ${arrowColor}; margin-left: 8px;">${arrow}</span></td>
+                                <td>${lastLogin}</td>
+                                <td><span class="ta-score-badge" style="background-color: ${bg};">${score}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // Update Endpoints List & Donut Chart
+                const endpointsList = document.getElementById('endpointsList');
+                document.getElementById('totalEndpoints').textContent = userIds.length > 0 ? userIds.length : 0;
+                
+                // Mockup styling for the endpoint dots
+                const colors = ['#F8FAFC', '#D19A66', '#9D72FF', '#E06C75', '#A0AEC0', '#61AFEF'];
+                
+                if (userIds.length > 0) {
+                    endpointsList.innerHTML = userIds.slice(0, 6).map((id, index) => `
+                        <div class="ta-legend-item">
+                            <span class="ta-dot" style="background-color: ${colors[index % colors.length]};"></span> 
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">${id}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    endpointsList.innerHTML = '<div style="grid-column: 1/-1;">No endpoints tracked</div>';
+                }
+
+                // Init Donut Chart (Segments based on threat level)
+                const ctxD = document.getElementById('endpointsChart').getContext('2d');
+                let high = 0, med = 0, low = 0;
+                Object.values(sessions).forEach(s => {
+                    if (s.threat_level === 'critical' || s.threat_level === 'high') high++;
+                    else if (s.threat_level === 'medium') med++;
+                    else low++;
+                });
+                
+                if(high===0 && med===0 && low===0) { low = 1; } // Prevent empty chart
+
+                new Chart(ctxD, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [low, med, high],
+                            backgroundColor: ['#61AFEF', '#9D72FF', '#E06C75'],
+                            borderWidth: 0,
+                            cutout: '85%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { tooltip: { enabled: false }, legend: { display: false } }
+                    }
+                });
+            });
+
+        // Fetch Security Events for News Feed
+        fetch('/api/security-events')
+            .then(res => res.json())
+            .then(data => {
+                const newsTbody = document.getElementById('newsFeedTable');
+                if (data.length === 0) {
+                    newsTbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No recent news.</td></tr>';
+                } else {
+                    newsTbody.innerHTML = data.slice(-4).reverse().map(event => {
+                        const actor = event.user_id || 'Unknown';
+                        const type = (event.event_type || 'Unknown').replace(/_/g, ' ');
+                        const rawDetail = JSON.stringify(event.details || {});
+                        
+                        // Fake tactics logic for visual similarity to mockup
+                        let tactic = '[Activity Monitored]';
+                        if (type.includes('fail')) tactic = '<span style="color: #E06C75;">[Credential Failure]</span>';
+                        if (type.includes('anomaly')) tactic = '<span style="color: #E06C75;">[Anomalous Behavior]</span>';
+                        if (type.includes('decrypt')) tactic = '<span style="color: #9D72FF;">[Encryption Event]</span>';
+
+                        return `
+                            <tr>
+                                <td>${actor.substring(0,15)}</td>
+                                <td>${type}</td>
+                                <td>${tactic}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initNetworkChart();
+        fetchData();
+        // Refresh dynamic tables every 30s
+        setInterval(fetchData, 30000);
+    });
+</script>
+{% endblock %}

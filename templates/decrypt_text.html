@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Text Decryption - Quantum-Resistant PKI{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Text Decryption</h1>
+
+<div style="max-width: 900px; margin: 0 auto;">
+    <!-- Private Key Path Input -->
+    <div style="margin-bottom: 2rem;">
+        <label class="form-label" for="privateKeyPath">Private Key File Path</label>
+        <input type="text" class="form-control" id="privateKeyPath" placeholder="keys/private_key_20240101_120000.key">
+    </div>
+    
+    <!-- Input Text Area -->
+    <div style="margin-bottom: 1rem;">
+        <label class="form-label" for="inputText">Enter encrypted data (JSON)</label>
+        <textarea class="form-control" id="inputText" rows="8" placeholder="Paste encrypted JSON data here"></textarea>
+    </div>
+    
+    <div style="color: var(--text-muted); margin-bottom: 2rem;">
+        Character count: <span id="charCount">0</span>
+    </div>
+    
+    <!-- Output Section -->
+    <div style="margin-bottom: 1rem;">
+        <h3 class="card-title" style="margin-bottom: 1rem;">Output</h3>
+        <textarea class="form-control" id="outputText" rows="8" placeholder="Decrypted text will appear here" readonly></textarea>
+    </div>
+    
+    <div style="color: var(--text-muted); margin-bottom: 2rem;">
+        Decryption time: <span id="decryptionTime">0.00s</span>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 1rem; justify-content: space-between;">
+        <button class="btn btn-primary" id="decryptBtn">Decrypt</button>
+        <button class="btn-link" id="clearBtn">Clear</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const inputText = document.getElementById('inputText');
+const outputText = document.getElementById('outputText');
+const charCount = document.getElementById('charCount');
+const decryptionTime = document.getElementById('decryptionTime');
+const decryptBtn = document.getElementById('decryptBtn');
+const clearBtn = document.getElementById('clearBtn');
+const privateKeyPath = document.getElementById('privateKeyPath');
+
+// Character count
+inputText.addEventListener('input', () => {
+    charCount.textContent = inputText.value.length;
+});
+
+// Decrypt handler
+decryptBtn.addEventListener('click', async () => {
+    const encryptedData = inputText.value;
+    const keyPath = privateKeyPath.value;
+    
+    if (!encryptedData) {
+        alert('Please enter encrypted data to decrypt');
+        return;
+    }
+    
+    if (!keyPath) {
+        alert('Please enter a private key path');
+        return;
+    }
+    
+    let parsedData;
+    try {
+        parsedData = JSON.parse(encryptedData);
+    } catch (error) {
+        alert('Invalid JSON format. Please enter valid encrypted data.');
+        return;
+    }
+    
+    const startTime = performance.now();
+    decryptBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/decrypt_text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                encrypted_data: parsedData,
+                private_key_path: keyPath
+            })
+        });
+        
+        const result = await response.json();
+        const endTime = performance.now();
+        const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
+        
+        if (result.success) {
+            outputText.value = result.plaintext;
+            decryptionTime.textContent = timeTaken + 's';
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        decryptBtn.disabled = false;
+    }
+});
+
+// Clear handler
+clearBtn.addEventListener('click', () => {
+    inputText.value = '';
+    outputText.value = '';
+    charCount.textContent = '0';
+    decryptionTime.textContent = '0.00s';
+});
+</script>
+{% endblock %}

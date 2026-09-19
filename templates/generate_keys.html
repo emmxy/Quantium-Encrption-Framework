@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Quantum-Safe Key Pairs - Quantum-Resistant PKI{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Generate Quantum-Safe Key Pairs</h1>
+<p class="page-subtitle">Select an algorithm and generate your cryptographic key pair.</p>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <!-- Algorithm Selection -->
+    <div class="card">
+        <h2 class="card-title">Algorithm</h2>
+        <select class="form-select" id="algorithm">
+            <option value="kyber768" selected>Kyber768 (Recommended)</option>
+            <option value="kyber512">Kyber512</option>
+        </select>
+    </div>
+
+    <!-- Key Generation Progress -->
+    <div class="card" id="progressCard" style="display: none;">
+        <h2 class="card-title">Key Generation Progress</h2>
+        <div class="progress-indicator">
+            <div class="progress-indicator-fill" id="progressBar" style="width: 0%;"></div>
+        </div>
+        <div style="margin-top: 1rem; color: var(--text-muted);" id="progressText">Estimated time remaining: 30 seconds
+        </div>
+    </div>
+
+    <!-- Generated Key Display -->
+    <div class="card" id="resultCard" style="display: none;">
+        <h2 class="card-title">Generated Keys</h2>
+        <div style="margin-bottom: 1rem;">
+            <label class="form-label">Public Key Path:</label>
+            <div style="background-color: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;"
+                id="publicKeyPath"></div>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label class="form-label">Private Key Path:</label>
+            <div style="background-color: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; font-family: monospace; word-break: break-all;"
+                id="privateKeyPath"></div>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <label class="form-label">Algorithm:</label>
+            <div style="background-color: var(--bg-secondary); padding: 0.75rem; border-radius: 8px;"
+                id="algorithmUsed"></div>
+        </div>
+        <div class="alert alert-danger" style="margin-top: 1rem;">
+            Keep your private key secure and never share it!
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+        <button class="btn btn-primary" id="generateBtn">Generate</button>
+        <button class="btn btn-secondary" id="copyBtn" style="display: none;">Copy to Clipboard</button>
+        <button class="btn btn-secondary" id="exportBtn" style="display: none; margin-left: auto;">Export Key</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const algorithm = document.getElementById('algorithm');
+    const generateBtn = document.getElementById('generateBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const progressCard = document.getElementById('progressCard');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const resultCard = document.getElementById('resultCard');
+    const publicKeyPath = document.getElementById('publicKeyPath');
+    const privateKeyPath = document.getElementById('privateKeyPath');
+    const algorithmUsed = document.getElementById('algorithmUsed');
+
+    let generatedKeys = null;
+
+    // Generate handler
+    generateBtn.addEventListener('click', async () => {
+        const selectedAlgorithm = algorithm.value;
+
+        generateBtn.disabled = true;
+        progressCard.style.display = 'block';
+        resultCard.style.display = 'none';
+        copyBtn.style.display = 'none';
+        exportBtn.style.display = 'none';
+
+        // Simulate progress
+        let progress = 0;
+        let timeRemaining = 30;
+        const progressInterval = setInterval(() => {
+            progress += 3;
+            timeRemaining = Math.max(0, timeRemaining - 1);
+            if (progress <= 100) {
+                progressBar.style.width = progress + '%';
+                progressText.textContent = `Estimated time remaining: ${timeRemaining} seconds`;
+            }
+        }, 1000);
+
+        try {
+            const formData = new FormData();
+            formData.append('algorithm', selectedAlgorithm);
+
+            const response = await fetch('/generate_keys', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            progressText.textContent = 'Key generation complete!';
+
+            const result = await response.json();
+
+            if (result.success) {
+                generatedKeys = result;
+                publicKeyPath.textContent = result.public_key_path;
+                privateKeyPath.textContent = result.private_key_path;
+                algorithmUsed.textContent = result.algorithm;
+                resultCard.style.display = 'block';
+                copyBtn.style.display = 'block';
+                exportBtn.style.display = 'block';
+            } else {
+                alert('Error: ' + result.error);
+            }
+        } catch (error) {
+            clearInterval(progressInterval);
+            alert('Error: ' + error.message);
+        } finally {
+            generateBtn.disabled = false;
+        }
+    });
+
+    // Copy to clipboard handler
+    copyBtn.addEventListener('click', () => {
+        if (generatedKeys) {
+            const textToCopy = `Public Key: ${generatedKeys.public_key_path}\nPrivate Key: ${generatedKeys.private_key_path}\nAlgorithm: ${generatedKeys.algorithm}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Keys copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+    });
+
+    // Export handler
+    exportBtn.addEventListener('click', () => {
+        if (generatedKeys) {
+            const data = {
+                public_key_path: generatedKeys.public_key_path,
+                private_key_path: generatedKeys.private_key_path,
+                algorithm: generatedKeys.algorithm,
+                generated_at: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `keys_${generatedKeys.algorithm}_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    });
+</script>
+{% endblock %}

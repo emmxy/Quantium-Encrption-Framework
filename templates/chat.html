@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Chat - Quantum-Resistant PKI{% endblock %}
+
+{% block content %}
+<div class="chat-glass-container">
+    <div class="chat-wrapper">
+    <!-- Left Sidebar -->
+    <div class="chat-sidebar">
+        <div class="chat-sidebar-header">
+            <h2>Chat</h2>
+            <div class="search-bar-container">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" placeholder="Search contacts...">
+            </div>
+        </div>
+        
+        <div class="chat-contact-list">
+            <!-- Contact 1 (Active) -->
+            <div class="chat-contact active" onclick="selectContact(this, 'David Bassy')">
+                <div class="contact-avatar" style="background-color: #FCA5A5;">
+                    <span class="avatar-initials">DB</span>
+                    <span class="status-indicator online"></span>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">David Bassy</div>
+                    <div class="contact-last-msg">Welcome to the secure channel</div>
+                </div>
+                <div class="contact-meta">
+                    <div class="contact-time">10:05</div>
+                </div>
+            </div>
+            
+            <!-- Contact 2 -->
+            <div class="chat-contact" onclick="selectContact(this, 'Chinedu Okoro')">
+                <div class="contact-avatar" style="background-color: #93C5FD;">
+                    <span class="avatar-initials">CO</span>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">Chinedu Okoro</div>
+                    <div class="contact-last-msg">I will send the encrypted file soon.</div>
+                </div>
+                <div class="contact-meta">
+                    <div class="contact-time">09:42</div>
+                    <div class="unread-badge">1</div>
+                </div>
+            </div>
+            
+            <!-- Contact 3 -->
+            <div class="chat-contact" onclick="selectContact(this, 'Aisha Bello')">
+                <div class="contact-avatar" style="background-color: #D8B4FE;">
+                    <span class="avatar-initials">AB</span>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">Aisha Bello</div>
+                    <div class="contact-last-msg">New Project for you</div>
+                </div>
+                <div class="contact-meta">
+                    <div class="contact-time">Yesterday</div>
+                    <div class="unread-badge">3</div>
+                </div>
+            </div>
+            
+            <!-- Contact 4 -->
+            <div class="chat-contact" onclick="selectContact(this, 'Oluwaseun Adeleke')">
+                <div class="contact-avatar" style="background-color: #86EFAC;">
+                    <span class="avatar-initials">OA</span>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">Oluwaseun Adeleke</div>
+                    <div class="contact-last-msg">Hey</div>
+                </div>
+                <div class="contact-meta">
+                    <div class="contact-time">31 Jan</div>
+                </div>
+            </div>
+            
+            <!-- Contact 5 -->
+            <div class="chat-contact" onclick="selectContact(this, 'Ngozi Eze')">
+                <div class="contact-avatar" style="background-color: #FDE047; color: #1f2937;">
+                    <span class="avatar-initials">NE</span>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">Ngozi Eze</div>
+                    <div class="contact-last-msg">meeting around 10:am</div>
+                </div>
+                <div class="contact-meta">
+                    <div class="contact-time">25 Jan</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="chat-main">
+        <div class="chat-main-header">
+            <div class="active-contact-info">
+                <h3 id="activeContactName">David Bassy</h3>
+                <span class="active-contact-status" id="connectionStatus">Initializing Kyber connection...</span>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="messagesContainer">
+            <div class="message system">Establishing Quantum-Resistant secure channel...</div>
+        </div>
+        
+        <div class="chat-input-area">
+            <button class="btn-icon" title="Attach File">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+            </button>
+            <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+            <button id="sendBtn" class="btn-send" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+    // --- State Management ---
+    const chatState = {
+        'David Bassy': [
+            { type: 'other', text: 'We invite you to our office for a visit', time: '10:00' },
+            { type: 'self', text: 'It\'s like a dream come true, thank you so much!', time: '10:03' },
+            { type: 'other', text: 'Welcome to the secure channel', time: '10:05' }
+        ],
+        'Chinedu Okoro': [
+            { type: 'other', text: 'I will send the encrypted file soon.', time: '09:42' }
+        ],
+        'Aisha Bello': [
+            { type: 'other', text: 'New Project for you', time: 'Yesterday' }
+        ],
+        'Oluwaseun Adeleke': [
+            { type: 'other', text: 'Hey', time: '31 Jan' }
+        ],
+        'Ngozi Eze': [
+            { type: 'other', text: 'meeting around 10:am', time: '25 Jan' }
+        ]
+    };
+    
+    let activeContact = 'David Bassy';
+
+    // --- UI Logic ---
+    function selectContact(element, name) {
+        // Remove active class from all
+        document.querySelectorAll('.chat-contact').forEach(el => el.classList.remove('active'));
+        // Add to clicked
+        element.classList.add('active');
+        // Update header
+        document.getElementById('activeContactName').textContent = name;
+        activeContact = name;
+        
+        renderMessages();
+    }
+    
+    function renderMessages() {
+        const messagesEl = document.getElementById('messagesContainer');
+        messagesEl.innerHTML = '<div class="message system">Establishing Quantum-Resistant secure channel...</div>';
+        
+        const history = chatState[activeContact] || [];
+        history.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = `message ${msg.type}`;
+            if (msg.id) div.id = msg.id;
+            
+            if (msg.type === 'system') {
+                div.textContent = msg.text;
+            } else {
+                div.innerHTML = `${msg.text}<div class="msg-time">${msg.time}</div>`;
+            }
+            messagesEl.appendChild(div);
+        });
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    
+    function updateSidebarPreview(contactName, text) {
+        // Find the contact element in the sidebar by checking the contact-name
+        document.querySelectorAll('.chat-contact').forEach(el => {
+            const nameEl = el.querySelector('.contact-name');
+            if (nameEl && nameEl.textContent === contactName) {
+                const lastMsgEl = el.querySelector('.contact-last-msg');
+                if (lastMsgEl) {
+                    lastMsgEl.textContent = text;
+                }
+            }
+        });
+    }
+
+    // --- WebSocket & Encryption Logic ---
+    const socket = io();
+    const ROOM_ID = 'secure-room-1';
+    // Generate a random user ID for this session
+    const myUsername = 'User_' + Math.floor(Math.random() * 1000);
+    
+    let myPublicKeyB64 = null;
+    let peerPublicKeyB64 = null;
+
+    const statusEl = document.getElementById('connectionStatus');
+    const inputEl = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Connect to WebSocket
+    socket.on('connect', () => {
+        statusEl.textContent = 'Generating Server-Side Kyber Keys...';
+        socket.emit('join_chat', { room: ROOM_ID, username: myUsername });
+        renderMessages(); // Initial render
+    });
+
+    // Receive my keys from server
+    socket.on('chat_keys_generated', (data) => {
+        myPublicKeyB64 = data.public_key;
+        statusEl.textContent = 'Waiting for peer...';
+        statusEl.style.color = 'var(--text-muted)';
+        
+        if (peerPublicKeyB64) {
+            readyToChat();
+        }
+    });
+
+    // Another user joined
+    socket.on('user_joined_chat', (data) => {
+        peerPublicKeyB64 = data.public_key;
+        
+        if (myPublicKeyB64) {
+            socket.emit('share_my_key', {
+                room: ROOM_ID,
+                public_key: myPublicKeyB64,
+                username: myUsername
+            });
+            readyToChat();
+        }
+    });
+
+    // Receive a shared key from an existing peer in the room
+    socket.on('receive_shared_key', (data) => {
+        if (!peerPublicKeyB64 && data.public_key !== myPublicKeyB64) {
+            peerPublicKeyB64 = data.public_key;
+            readyToChat();
+        }
+    });
+
+    function readyToChat() {
+        statusEl.textContent = 'Hybrid E2EE Secured';
+        statusEl.style.color = 'var(--success-green)';
+        
+        inputEl.disabled = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+    }
+
+    // Input handlers mapping
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+        
+        if (!peerPublicKeyB64) {
+            alert("Waiting for a peer to join the room before sending.");
+            return;
+        }
+
+        // Server encrypts it
+        socket.emit('send_chat_message', {
+            room: ROOM_ID,
+            text: text,
+            recipient_public_key: peerPublicKeyB64,
+            username: myUsername
+        });
+        
+        const timeStr = getCurrentTime();
+        
+        // Save to state
+        if (!chatState[activeContact]) chatState[activeContact] = [];
+        chatState[activeContact].push({ type: 'self', text: text, time: timeStr });
+        
+        // Update UI
+        renderMessages();
+        updateSidebarPreview(activeContact, text);
+        
+        inputEl.value = '';
+    }
+
+    // Receive encrypted message
+    socket.on('receive_chat_message', (data) => {
+        const msgId = 'msg_' + Date.now();
+        // Temporarily add a "Decrypting..." message to state
+        if (!chatState[activeContact]) chatState[activeContact] = [];
+        chatState[activeContact].push({ id: msgId, type: 'other', text: 'Decrypting securely...', time: getCurrentTime() });
+        renderMessages();
+        
+        // Request server to decrypt
+        socket.emit('request_decryption', {
+            encrypted_data: data.encrypted_data,
+            msg_id: msgId
+        });
+    });
+
+    // Receive decrypted result
+    socket.on('decryption_result', (data) => {
+        if (data.success) {
+            // Find the placeholder in the state and update it
+            const msg = chatState[activeContact].find(m => m.id === data.msg_id);
+            if (msg) {
+                msg.text = data.plaintext;
+                // Update sidebar preview
+                updateSidebarPreview(activeContact, data.plaintext);
+            }
+        } else {
+            const msg = chatState[activeContact].find(m => m.id === data.msg_id);
+            if (msg) {
+                msg.text = '[Decryption Failed]';
+            }
+        }
+        renderMessages();
+    });
+    
+    function getCurrentTime() {
+        const now = new Date();
+        return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    }
+</script>
+{% endblock %}

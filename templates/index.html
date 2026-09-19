@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 class="page-title" style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin: 0;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style="display: inline-block; margin-right: 0.5rem; vertical-align: middle;">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+        </svg>
+        Security Operations Center (SOC)
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">System Monitoring & Threat Intelligence
+    </p>
+</div>
+
+<!-- Top Section: Grid Layout -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+
+    <!-- Left Column: Data Visualizations -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+        <!-- Line Chart: Threat Activity Over Time -->
+        <div class="card" style="padding: 1rem; border-radius: 8px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                <h2
+                    style="font-size: 1rem; margin: 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                    Network Activity & Threats (24H)</h2>
+            </div>
+            <div style="height: 250px; width: 100%;">
+                <canvas id="activityLineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Bar Chart: Attack Types -->
+        <div class="card" style="padding: 1rem; border-radius: 8px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                <h2
+                    style="font-size: 1rem; margin: 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                    Detected Vectors</h2>
+            </div>
+            <div style="height: 200px; width: 100%;">
+                <canvas id="attackBarChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right Column: Metrics & Insights -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+        <!-- Danger Threat Insights Panel -->
+        <div class="card" style="padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--warning-yellow);">
+            <h3
+                style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; margin-top: 0;">
+                Threat Analysis Insights</h3>
+
+            <div style="margin-bottom: 1.5rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">System Risk Score</span>
+                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--warning-yellow);">42%</span>
+                </div>
+                <div
+                    style="width: 100%; height: 6px; background-color: var(--bg-primary); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 42%; height: 100%; background-color: var(--warning-yellow);"></div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">Status: Elevating -
+                    Monitoring anomalies.</div>
+            </div>
+
+            <div>
+                <span
+                    style="font-size: 0.85rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Latest
+                    Anomaly Detected:</span>
+                <div
+                    style="background-color: var(--bg-primary); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--border-color); font-family: monospace; font-size: 0.85rem; color: var(--text-primary);">
+                    Multiple failed auth attempts<br>
+                    <span style="color: var(--danger-red);">Origin: 192.168.1.104</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+            <!-- Card 1 -->
+            <div class="card" style="padding: 1rem; border-radius: 8px;">
+                <h5
+                    style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; margin-top: 0;">
+                    Total Activities</h5>
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">{{
+                    stats.get('total_activities', 154) }}</h2>
+                <div style="font-size: 0.75rem; color: var(--success-green); margin-top: 0.5rem;">&#x2191; 12% this week
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card" style="padding: 1rem; border-radius: 8px;">
+                <h5
+                    style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; margin-top: 0;">
+                    Encryptions</h5>
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">{{
+                    stats.get('encryption_count', 89) }}</h2>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Secure Operations</div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card" style="padding: 1rem; border-radius: 8px;">
+                <h5
+                    style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; margin-top: 0;">
+                    Active Threats</h5>
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--danger-red); margin: 0;">{{
+                    stats.get('threats_detected', 7) }}</h2>
+                <div style="font-size: 0.75rem; color: var(--danger-red); margin-top: 0.5rem;">Require Attention</div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="card" style="padding: 1rem; border-radius: 8px;">
+                <h5
+                    style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; margin-top: 0;">
+                    Blocked Comm</h5>
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0;">{{
+                    stats.get('blocked_count', 23) }}</h2>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">IPS Interventions</div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Bottom Section: Logs Table -->
+<div class="card" style="padding: 1.5rem; border-radius: 8px;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+        <h2
+            style="font-size: 1rem; margin: 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+            Activity & Security Logs</h2>
+        <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;"
+            onclick="fetchLogs()">Refresh</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+                <tr>
+                    <th
+                        style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-muted); font-weight: 500;">
+                        Timestamp</th>
+                    <th
+                        style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-muted); font-weight: 500;">
+                        IP Address</th>
+                    <th
+                        style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-muted); font-weight: 500;">
+                        Event Type</th>
+                    <th
+                        style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-muted); font-weight: 500;">
+                        Details</th>
+                    <th
+                        style="padding: 0.75rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-muted); font-weight: 500;">
+                        Status</th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                <!-- Data populated by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let activityChartInstance = null;
+    let attackChartInstance = null;
+
+    function initOrUpdateCharts() {
+        const style = getComputedStyle(document.body);
+        const textColor = style.getPropertyValue('--text-secondary').trim() || '#9CA3AF';
+        const borderColor = style.getPropertyValue('--border-color').trim() || '#1F2937';
+
+        Chart.defaults.color = textColor;
+        Chart.defaults.borderColor = borderColor;
+        Chart.defaults.font.family = 'monospace';
+
+        // Dummy Time Series Data for Line Chart
+        const timeLabels = [];
+        const normalActivity = [];
+        const threatActivity = [];
+
+        let now = new Date();
+        for (let i = 24; i >= 0; i--) {
+            let d = new Date(now.getTime() - i * 60 * 60 * 1000);
+            timeLabels.push(d.getHours() + ':00');
+            normalActivity.push(Math.floor(Math.random() * 50) + 10);
+            threatActivity.push(Math.floor(Math.random() * 5)); // occasional blips
+        }
+
+        const activityCtx = document.getElementById('activityLineChart');
+        if (activityCtx) {
+            if (activityChartInstance) activityChartInstance.destroy();
+            activityChartInstance = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [
+                        {
+                            label: 'Normal Activity',
+                            data: normalActivity,
+                            borderColor: '#4F8CFF', // accent-blue
+                            backgroundColor: 'rgba(79, 140, 255, 0.15)',
+                            borderWidth: 1.5,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Detected Threats',
+                            data: threatActivity,
+                            borderColor: '#EF4444', // danger-red
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            borderWidth: 1.5,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#EF4444'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                usePointStyle: true,
+                                color: textColor
+                            }
+                        },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: borderColor }, ticks: { color: textColor } },
+                        x: { grid: { display: false }, ticks: { color: textColor } }
+                    }
+                }
+            });
+        }
+
+        // Bar Chart Data
+        const attackCtx = document.getElementById('attackBarChart');
+        if (attackCtx) {
+            if (attackChartInstance) attackChartInstance.destroy();
+            attackChartInstance = new Chart(attackCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Malicious Payload', 'Decapsulation Fail', 'Auth Failure', 'Rate Limit', 'Anomalous Payload'],
+                    datasets: [{
+                        label: 'Incidents',
+                        data: [12, 5, 18, 42, 3],
+                        backgroundColor: [
+                            '#F59E0B', // Warning
+                            '#EF4444', // Danger
+                            '#4F8CFF', // Info/Blue
+                            '#6B7280', // Muted
+                            '#22C55E', // Success
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 6,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: borderColor }, ticks: { stepSize: 10, color: textColor } },
+                        x: { grid: { display: false }, ticks: { color: textColor } }
+                    }
+                }
+            });
+        }
+    }
+
+    // Initialize charts on load
+    document.addEventListener('DOMContentLoaded', initOrUpdateCharts);
+
+    // Re-render when theme changes
+    window.addEventListener('themeChanged', () => { // tiny delay to allow CSS to apply
+        setTimeout(initOrUpdateCharts, 50);
+    });
+
+    // Fetch Logs
+    function fetchLogs() {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 1rem;">Loading events...</td></tr>';
+
+        fetch('/api/security-events')
+            .then(res => res.json())
+            .then(data => {
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 1rem;">No recent events logged.</td></tr>';
+                    return;
+                }
+
+                // Show last 10 events, reversed for newest first
+                const recentEvents = data.slice(-10).reverse();
+                tbody.innerHTML = '';
+
+                recentEvents.forEach(event => {
+                    const tr = document.createElement('tr');
+
+                    const timeCell = document.createElement('td');
+                    timeCell.style.padding = '0.75rem';
+                    timeCell.style.borderBottom = '1px solid var(--border-color)';
+                    timeCell.textContent = new Date(event.timestamp * 1000).toLocaleString();
+
+                    const ipCell = document.createElement('td');
+                    ipCell.style.padding = '0.75rem';
+                    ipCell.style.borderBottom = '1px solid var(--border-color)';
+                    ipCell.style.fontFamily = 'monospace';
+                    ipCell.textContent = event.user_id || 'Unknown';
+
+                    const typeCell = document.createElement('td');
+                    typeCell.style.padding = '0.75rem';
+                    typeCell.style.borderBottom = '1px solid var(--border-color)';
+                    typeCell.textContent = (event.action + ' - ' + (event.event_type || '')).toUpperCase();
+
+                    const detailsCell = document.createElement('td');
+                    detailsCell.style.padding = '0.75rem';
+                    detailsCell.style.borderBottom = '1px solid var(--border-color)';
+                    let details = '';
+                    if (event.algorithm) details += `Algo: ${event.algorithm} | `;
+                    if (event.file_size) details += `Size: ${event.file_size}b | `;
+                    detailsCell.textContent = details || 'N/A';
+
+                    const statusCell = document.createElement('td');
+                    statusCell.style.padding = '0.75rem';
+                    statusCell.style.borderBottom = '1px solid var(--border-color)';
+
+                    const badge = document.createElement('span');
+                    badge.style.padding = '0.2rem 0.5rem';
+                    badge.style.borderRadius = '4px';
+                    badge.style.fontSize = '0.75rem';
+                    badge.style.fontWeight = '500';
+                    if (event.success === true) {
+                        badge.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                        badge.style.color = '#10B981';
+                        badge.textContent = 'SUCCESS';
+                    } else if (event.success === false) {
+                        badge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                        badge.style.color = '#EF4444';
+                        badge.textContent = 'BLOCKED/FAIL';
+                    } else {
+                        badge.style.backgroundColor = 'rgba(107, 114, 128, 0.1)';
+                        badge.style.color = '#9CA3AF';
+                        badge.textContent = 'INFO';
+                    }
+                    statusCell.appendChild(badge);
+
+                    tr.appendChild(timeCell);
+                    tr.appendChild(ipCell);
+                    tr.appendChild(typeCell);
+                    tr.appendChild(detailsCell);
+                    tr.appendChild(statusCell);
+
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error('Error fetching logs:', err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 1rem; color: var(--danger-red);">Failed to load logs.</td></tr>';
+            });
+    }
+
+    // Load logs on initial page load
+    document.addEventListener('DOMContentLoaded', fetchLogs);
+</script>
+{% endblock %}

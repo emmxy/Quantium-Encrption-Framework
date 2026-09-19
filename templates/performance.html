@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Metrics - Quantum-Resistant PKI{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Performance Metrics</h1>
+<p class="page-subtitle">Monitor the performance of different encryption algorithms.</p>
+
+<!-- Encryption Time Comparison Card -->
+<div class="card">
+    <h2 class="card-title">Encryption Time Comparison</h2>
+    <div style="text-align: center; margin: 2rem 0;">
+        <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary);">100ms</div>
+        <div style="font-size: 1.1rem; color: var(--success-green); margin-top: 0.5rem;">Last 30 Days +5%</div>
+    </div>
+    
+    <!-- Simple Line Chart Representation -->
+    <div class="chart-container">
+        <div style="display: flex; align-items: flex-end; justify-content: space-around; height: 200px; border-bottom: 2px solid var(--border-color); border-left: 2px solid var(--border-color); padding: 1rem;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="width: 60px; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 120px;"></div>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">RSA</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="width: 60px; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 80px;"></div>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">Kyber</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="width: 60px; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 60px;"></div>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">AES</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Three Metric Cards -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 2rem 0;">
+    <!-- CPU Usage -->
+    <div class="stats-card">
+        <h5>CPU Usage</h5>
+        <h2>25%</h2>
+        <div class="stats-trend trend-down">Current -2%</div>
+        <div style="margin-top: 1.5rem;">
+            <div style="display: flex; gap: 1rem; align-items: flex-end; height: 100px;">
+                <div style="flex: 1; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 60px;"></div>
+                <div style="flex: 1; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 80px;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 0.5rem;">
+                <span style="color: var(--text-muted); font-size: 0.85rem;">Kyber</span>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">AES</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Size -->
+    <div class="stats-card">
+        <h5>Key Size</h5>
+        <h2>32KB</h2>
+        <div class="stats-trend trend-up">+10%</div>
+        <div style="margin-top: 1.5rem;">
+            <div style="display: flex; gap: 1rem; align-items: flex-end; height: 100px;">
+                <div style="flex: 1; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 50px;"></div>
+                <div style="flex: 1; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 70px;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 0.5rem;">
+                <span style="color: var(--text-muted); font-size: 0.85rem;">Kyber</span>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">AES</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Latency -->
+    <div class="stats-card">
+        <h5>Latency</h5>
+        <h2>5ms</h2>
+        <div class="stats-trend trend-down">-1%</div>
+        <div style="margin-top: 1.5rem;">
+            <div style="display: flex; gap: 1rem; align-items: flex-end; height: 100px;">
+                <div style="flex: 1; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 90px;"></div>
+                <div style="flex: 1; background: linear-gradient(180deg, var(--accent-purple), var(--accent-purple-dark)); border-radius: 8px 8px 0 0; height: 40px;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-around; margin-top: 0.5rem;">
+                <span style="color: var(--text-muted); font-size: 0.85rem;">Kyber</span>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">AES</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Section -->
+<div class="card">
+    <h2 class="card-title">Summary</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 1.5rem;">
+        <div>
+            <h5 style="color: var(--text-muted); margin-bottom: 0.5rem;">Average File Size</h5>
+            <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary);">15MB</div>
+        </div>
+        <div>
+            <h5 style="color: var(--text-muted); margin-bottom: 0.5rem;">Encryption Speed</h5>
+            <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary);">200MB/s</div>
+        </div>
+        <div>
+            <h5 style="color: var(--text-muted); margin-bottom: 0.5rem;">Performance Rating</h5>
+            <div style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary);">9.5/10</div>
+        </div>
+    </div>
+</div>
+
+<!-- Run Evaluation Button -->
+<div style="text-align: center; margin-top: 2rem;">
+    <button class="btn btn-primary" id="runEvaluation" style="padding: 1rem 2rem; font-size: 1.1rem;">Run Performance Evaluation</button>
+    <p style="color: var(--text-muted); margin-top: 1rem;">This will compare Kyber512, Kyber768, RSA-2048, and RSA-3072 algorithms.</p>
+</div>
+
+<!-- Detailed Results (Hidden by default) -->
+<div id="detailedResults" style="display: none; margin-top: 2rem;">
+    <div class="card">
+        <h2 class="card-title">Key Generation Performance</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Mean (ms)</th>
+                    <th>Median (ms)</th>
+                    <th>Min (ms)</th>
+                    <th>Max (ms)</th>
+                </tr>
+            </thead>
+            <tbody id="keygenTable"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">Encryption Performance</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Mean (ms)</th>
+                    <th>Median (ms)</th>
+                    <th>Min (ms)</th>
+                    <th>Max (ms)</th>
+                </tr>
+            </thead>
+            <tbody id="encryptTable"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">Decryption Performance</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Mean (ms)</th>
+                    <th>Median (ms)</th>
+                    <th>Min (ms)</th>
+                    <th>Max (ms)</th>
+                </tr>
+            </thead>
+            <tbody id="decryptTable"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">Key Size Comparison</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Public Key (bytes)</th>
+                    <th>Private Key (bytes)</th>
+                    <th>Ciphertext (bytes)</th>
+                    <th>Total (bytes)</th>
+                </tr>
+            </thead>
+            <tbody id="keySizeTable"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('runEvaluation').addEventListener('click', async () => {
+    const button = document.getElementById('runEvaluation');
+    button.disabled = true;
+    button.textContent = 'Running Evaluation...';
+    
+    try {
+        const response = await fetch('/performance?run=1');
+        const results = await response.json();
+        
+        // Populate tables
+        populateTable('keygenTable', results.key_generation);
+        populateTable('encryptTable', results.encryption);
+        populateTable('decryptTable', results.decryption);
+        populateKeySizeTable('keySizeTable', results.key_sizes);
+        
+        document.getElementById('detailedResults').style.display = 'block';
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Run Performance Evaluation';
+    }
+});
+
+function populateTable(tableId, data) {
+    const tbody = document.getElementById(tableId);
+    tbody.innerHTML = '';
+    
+    for (const [alg, stats] of Object.entries(data)) {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = alg;
+        row.insertCell(1).textContent = stats.mean.toFixed(2);
+        row.insertCell(2).textContent = stats.median.toFixed(2);
+        row.insertCell(3).textContent = stats.min.toFixed(2);
+        row.insertCell(4).textContent = stats.max.toFixed(2);
+    }
+}
+
+function populateKeySizeTable(tableId, data) {
+    const tbody = document.getElementById(tableId);
+    tbody.innerHTML = '';
+    
+    for (const [alg, sizes] of Object.entries(data)) {
+        const row = tbody.insertRow();
+        row.insertCell(0).textContent = alg;
+        row.insertCell(1).textContent = sizes.public_key;
+        row.insertCell(2).textContent = sizes.private_key;
+        row.insertCell(3).textContent = sizes.ciphertext;
+        row.insertCell(4).textContent = sizes.total;
+    }
+}
+</script>
+{% endblock %}
