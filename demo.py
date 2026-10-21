@@ -115,7 +115,7 @@ def demo_threat_detection():
             print(f"\n   Threat #{i}:")
             print(f"     Severity: {threat['severity']}")
             print(f"     Score: {threat['anomaly_score']:.3f}")
-            print(f"     Description: {threat['description']}")
+            print(f"     Description: {threat.get('description') or threat.get('explanation', 'N/A')}")
     else:
         print("\n   ✓ No threats detected")
     

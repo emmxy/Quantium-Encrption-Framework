@@ -34,7 +34,7 @@ def encrypt_text_cli(args):
     
     # Load public key
     kyber = KyberEncryption()
-    public_key, _ = kyber.load_keypair(args.public_key, args.public_key.replace('public', 'private'))
+    public_key = kyber.load_public_key(args.public_key)
     
     # Read text
     if args.text:
@@ -63,10 +63,7 @@ def decrypt_text_cli(args):
     
     # Load private key
     kyber = KyberEncryption()
-    _, private_key = kyber.load_keypair(
-        args.private_key.replace('private', 'public'),
-        args.private_key
-    )
+    private_key = kyber.load_private_key(args.private_key)
     
     # Load encrypted data
     hybrid = HybridEncryption()
@@ -92,8 +89,7 @@ def encrypt_file_cli(args):
     
     # Load public key
     kyber = KyberEncryption()
-    public_key, _ = kyber.load_keypair(args.public_key, 
-                                      args.public_key.replace('public', 'private'))
+    public_key = kyber.load_public_key(args.public_key)
     
     # Encrypt file
     hybrid = HybridEncryption()
@@ -119,10 +115,7 @@ def decrypt_file_cli(args):
     
     # Load private key
     kyber = KyberEncryption()
-    _, private_key = kyber.load_keypair(
-        args.private_key.replace('private', 'public'),
-        args.private_key
-    )
+    private_key = kyber.load_private_key(args.private_key)
     
     # Load encrypted data
     hybrid = HybridEncryption()

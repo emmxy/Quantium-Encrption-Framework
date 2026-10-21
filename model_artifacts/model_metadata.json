@@ -1,0 +1,157 @@
+{
+  "timestamp": "2026-10-21T06:47:01Z",
+  "model_type": "RandomForestClassifier",
+  "hyperparameters": {
+    "n_estimators": 100,
+    "max_depth": 12,
+    "class_weight": "balanced",
+    "random_state": 42
+  },
+  "dataset_summary": {
+    "total_samples": 6000,
+    "train_samples": 4800,
+    "test_samples": 1200,
+    "classes": [
+      "benign",
+      "sqli",
+      "xss",
+      "path_traversal",
+      "crypto_anomaly",
+      "rate_abuse"
+    ],
+    "feature_names": [
+      "path_length",
+      "query_length",
+      "body_length",
+      "shannon_entropy",
+      "special_char_ratio",
+      "sqli_syntax_score",
+      "xss_syntax_score",
+      "traversal_syntax_score",
+      "is_post",
+      "param_count",
+      "crypto_fail_flag",
+      "request_rate",
+      "numeric_ratio",
+      "max_token_length"
+    ]
+  },
+  "training_time_seconds": 0.2523887190000096,
+  "inference_latency_microseconds_per_request": 38.08256083326948,
+  "throughput_requests_per_second": 26258.738333751582,
+  "overall_metrics": {
+    "accuracy": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1_score": 1.0,
+    "weighted_precision": 1.0,
+    "weighted_recall": 1.0,
+    "weighted_f1_score": 1.0,
+    "benign_false_positive_rate": 0.0,
+    "attack_false_negative_rate": 0.0
+  },
+  "per_class_metrics": {
+    "benign": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 600
+    },
+    "sqli": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 120
+    },
+    "xss": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 120
+    },
+    "path_traversal": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 120
+    },
+    "crypto_anomaly": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 120
+    },
+    "rate_abuse": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 120
+    }
+  },
+  "confusion_matrix": [
+    [
+      600,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      120,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      120,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      120,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      120,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      120
+    ]
+  ],
+  "feature_importances": {
+    "path_length": 0.0183591874872649,
+    "query_length": 0.06596372871426749,
+    "body_length": 0.04549341994355647,
+    "shannon_entropy": 0.04052787709715147,
+    "special_char_ratio": 0.07002638303672876,
+    "sqli_syntax_score": 0.09550254912288192,
+    "xss_syntax_score": 0.13045737098562432,
+    "traversal_syntax_score": 0.05787825015249568,
+    "is_post": 0.007671751556116361,
+    "param_count": 0.07669676839457092,
+    "crypto_fail_flag": 0.11799031618842944,
+    "request_rate": 0.14568476395187763,
+    "numeric_ratio": 0.04615819149319155,
+    "max_token_length": 0.08158944187584324
+  }
+}

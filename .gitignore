@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest and test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Runtime operational files and secrets
+keys/*.bin
+keys/*.pem
+keys/*.key
+uploads/*
+!uploads/.gitkeep
+encrypted/*
+!encrypted/.gitkeep
+decrypted/*
+!decrypted/.gitkeep
+*.log

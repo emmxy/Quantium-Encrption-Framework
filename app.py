@@ -11,14 +11,25 @@ import os
 import json
 from datetime import datetime
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from kyber_encryption import KyberEncryption
-from hybrid_encryption import HybridEncryption
+from kyber_encryption import (
+    KyberEncryption,
+    KeyValidationError,
+    CiphertextValidationError,
+    DecapsulationError
+)
+from hybrid_encryption import (
+    HybridEncryption,
+    AuthenticationTagError,
+    DecryptionError,
+    HybridCryptoError
+)
 from threat_detection import ThreatDetection
 from performance import PerformanceEvaluator
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = os.urandom(32)
+ADMIN_API_KEY = os.environ.get('ADMIN_API_KEY', 'quantium-admin-secret-key-2026')
 active_chat_sessions = {}  # Store sid -> private_key mapping for chat
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -43,36 +54,53 @@ limiter = Limiter(
     storage_uri="memory://"
 )
 
-# Basic WAF (Web Application Firewall) payload signatures
-MALICIOUS_PAYLOADS = [
-    "<script>", "javascript:", "onload=", "onerror=",  # XSS
-    "UNION SELECT", "DROP TABLE", "--", "1=1", "OR 1=1",  # SQLi
-    "../", "..\\", "/etc/passwd", "cmd.exe"  # Path traversal / LFI / RCE
-]
-
 @app.before_request
 def security_middleware():
     """
-    Middleware that runs before every request to provide IPS and WAF capabilities.
+    Middleware that runs before every request to provide IPS and WAF capabilities
+    leveraging the trained Random Forest classifier and dynamic risk scoring.
     """
     client_ip = request.remote_addr or 'anonymous'
     
-    # 1. IPS Component: Check Manual Blocklist and AI Threat Detector Risk Score
+    # Static files bypass security inspection
+    if request.path.startswith('/static'):
+        return
+
+    # 1. IPS Component: Check Manual Blocklist
     if client_ip in threat_detector.manual_blocklist:
-        abort(403, description="Your IP has been manually blocked by the administrator.")
+        abort(403, description="Access Forbidden: Your IP has been manually blocked by the administrator.")
         
+    # 2. IPS Component: High Risk Score Block
     session_status = threat_detector.get_session_status(client_ip)
-    if session_status and session_status.get('risk_score', 0) > 50:
-        # Block the request if the AI indicates high risk
-        abort(403, description="Your IP has been temporarily blocked due to anomalous activity detected by the AI.")
+    if session_status and session_status.get('risk_score', 0) > 75:
+        abort(403, description="Access Forbidden: Your IP has been temporarily blocked due to anomalous activity detected by AI IPS.")
         
-    # 2. WAF Component: Inspect URL and Data for Malicious Payloads
-    request_data = str(request.args) + str(request.form) + str(request.data)
-    for payload in MALICIOUS_PAYLOADS:
-        if payload.lower() in request_data.lower():
-            # Log WAF trigger to the AI Threat Detector
-            threat_detector.log_activity('web_request', success=False, event_type='waf_payload_detected', user_id=client_ip)
-            abort(403, description="Malicious payload detected and blocked by WAF.")
+    # 3. Random Forest WAF / IPS Request Inspection
+    query_str = request.query_string.decode('utf-8', errors='ignore')
+    body_str = ""
+    try:
+        if request.mimetype == 'multipart/form-data':
+            # For multipart uploads, inspect form fields and filenames to avoid MIME boundary dashes
+            form_parts = [f"{k}={v}" for k, v in request.form.items()]
+            file_parts = [f.filename for f in request.files.values() if f and f.filename]
+            body_str = " ".join(form_parts + file_parts)
+        elif request.content_length and request.content_length < 200000:
+            body_str = request.get_data(as_text=True)
+    except Exception:
+        body_str = ""
+
+    classification = threat_detector.classify_request(
+        method=request.method,
+        path=request.path,
+        query=query_str,
+        body=body_str,
+        client_ip=client_ip,
+        crypto_fail=False
+    )
+    
+    if classification.get('action') == 'block':
+        predicted_class = classification.get('predicted_class', 'unknown').upper()
+        abort(403, description=f"Access Forbidden: Malicious request blocked by AI IPS ({predicted_class}).")
 
 
 @app.route('/')
@@ -191,14 +219,33 @@ def decrypt_text():
                 'success': True,
                 'plaintext': plaintext
             })
+        except AuthenticationTagError as e:
+            client_ip = request.remote_addr or 'anonymous'
+            threat_detector.log_activity(
+                'decrypt', success=False, event_type='integrity_failure',
+                integrity_check=False, user_id=client_ip
+            )
+            return jsonify({
+                'success': False,
+                'error': 'Decryption failed: Authentication tag verification failed. Ciphertext or metadata has been tampered with.'
+            }), 400
+        except (KeyValidationError, CiphertextValidationError) as e:
+            client_ip = request.remote_addr or 'anonymous'
+            threat_detector.log_activity(
+                'decrypt', success=False, event_type='key_mismatch',
+                key_mismatch=True, user_id=client_ip
+            )
+            return jsonify({
+                'success': False,
+                'error': f'Decryption failed: Invalid cryptographic parameter or key size: {str(e)}'
+            }), 400
         except Exception as e:
-            # Log failed decryption with specific event type
             error_msg = str(e).lower()
             event_type = 'kyber_decapsulation_failed' if 'kyber' in error_msg or 'key' in error_msg else 'aes_decrypt_failed'
             client_ip = request.remote_addr or 'anonymous'
             threat_detector.log_activity('decrypt', success=False, event_type=event_type, 
                                         algorithm='kyber768', user_id=client_ip)
-            return jsonify({'success': False, 'error': str(e)}), 400
+            return jsonify({'success': False, 'error': f'Decryption failed: {str(e)}'}), 400
     
     return render_template('decrypt_text.html')
 
@@ -305,29 +352,68 @@ def decrypt_file():
                 'decrypted_file_path': output_path,
                 'filename': original_filename
             })
+        except AuthenticationTagError as e:
+            client_ip = request.remote_addr or 'anonymous'
+            threat_detector.log_activity(
+                'decrypt', success=False, event_type='integrity_failure',
+                integrity_check=False, user_id=client_ip
+            )
+            return jsonify({
+                'success': False,
+                'error': 'Decryption failed: File authentication tag verification failed. Ciphertext has been corrupted or tampered with.'
+            }), 400
+        except (KeyValidationError, CiphertextValidationError) as e:
+            client_ip = request.remote_addr or 'anonymous'
+            threat_detector.log_activity(
+                'decrypt', success=False, event_type='key_mismatch',
+                key_mismatch=True, user_id=client_ip
+            )
+            return jsonify({
+                'success': False,
+                'error': f'Decryption failed: Invalid key or ciphertext format: {str(e)}'
+            }), 400
         except Exception as e:
-            # Log failed file decryption with specific event type
             error_msg = str(e).lower()
             event_type = 'kyber_decapsulation_failed' if 'kyber' in error_msg or 'key' in error_msg else 'aes_decrypt_failed'
             client_ip = request.remote_addr or 'anonymous'
             threat_detector.log_activity('decrypt', success=False, event_type=event_type, user_id=client_ip)
-            return jsonify({'success': False, 'error': str(e)}), 400
+            return jsonify({'success': False, 'error': f'Decryption failed: {str(e)}'}), 400
     
     return render_template('decrypt_file.html')
 
 
 @app.route('/download')
 def download_file():
-    """Download a file."""
+    """
+    Download a file with strict path traversal prevention and directory confinement.
+    Only allows downloads from authorized output directories (encrypted, decrypted, uploads).
+    """
     filepath = request.args.get('file')
-    if not filepath or not os.path.exists(filepath):
-        abort(404, description="File not found")
+    if not filepath:
+        abort(400, description="Missing file parameter")
     
-    # Basic path traversal prevention
-    if '..' in filepath or filepath.startswith('/') or filepath.startswith('\\'):
-        abort(403, description="Invalid path")
+    canonical_path = os.path.realpath(filepath)
+    allowed_directories = [
+        os.path.realpath(app.config['ENCRYPTED_FOLDER']),
+        os.path.realpath(app.config['DECRYPTED_FOLDER']),
+        os.path.realpath(app.config['UPLOAD_FOLDER'])
+    ]
+    
+    # Check if canonical_path is inside any authorized directory
+    is_authorized = any(
+        os.path.commonpath([canonical_path, d]) == d
+        for d in allowed_directories
+    )
+    
+    # Explicitly prohibit downloading from KEYS_FOLDER or application root source code
+    keys_dir = os.path.realpath(app.config['KEYS_FOLDER'])
+    if os.path.commonpath([canonical_path, keys_dir]) == keys_dir:
+        is_authorized = False
         
-    return send_file(filepath, as_attachment=True)
+    if not is_authorized or not os.path.isfile(canonical_path):
+        abort(403, description="Access Forbidden: Path is outside authorized directories.")
+        
+    return send_file(canonical_path, as_attachment=True)
 
 
 @app.route('/threat_analysis')
@@ -378,8 +464,17 @@ def api_security_events():
 
 @app.route('/api/block_ip', methods=['POST'])
 def api_block_ip():
-    """API endpoint to manually block an IP address."""
-    data = request.get_json()
+    """
+    API endpoint to manually block an IP address.
+    Protected by Administrative Authentication (X-Admin-Key header or admin_key payload).
+    """
+    auth_header = request.headers.get('X-Admin-Key')
+    data = request.get_json(silent=True) or {}
+    auth_body = data.get('admin_key')
+    
+    if (auth_header != ADMIN_API_KEY) and (auth_body != ADMIN_API_KEY):
+        abort(401, description="Unauthorized: Administrative authentication required.")
+
     ip_address = data.get('ip_address')
     if not ip_address:
         return jsonify({'success': False, 'error': 'No IP address provided'}), 400

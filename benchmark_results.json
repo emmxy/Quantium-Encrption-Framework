@@ -1,0 +1,323 @@
+{
+  "benchmark_metadata": {
+    "title": "Post-Quantum ML-KEM (FIPS 203) vs Classical RSA Benchmark",
+    "target_comparison": "ML-KEM-768 vs RSA-4096",
+    "environment": {
+      "os": "Linux",
+      "os_release": "6.8.0-1064-azure",
+      "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.39",
+      "architecture": "x86_64",
+      "processor": "x86_64",
+      "cpu_count": 2,
+      "python_version": "3.14.2",
+      "cryptography_version": "50.0.2",
+      "pqcrypto_version": "1.0.0",
+      "timestamp_utc": "2026-10-21T06:52:02Z",
+      "clock_source": "time.perf_counter_ns (monotonic, nanosecond resolution)"
+    },
+    "process_cpu_time_seconds": 20.5958,
+    "max_rss_kb": 343080,
+    "network_handshake_latency": "unavailable (local process benchmark; no external network transport)"
+  },
+  "key_generation": {
+    "ML-KEM-512": {
+      "trials": 100,
+      "mean_ms": 0.0769,
+      "stddev_ms": 0.1083,
+      "median_ms": 0.0645,
+      "p95_ms": 0.0788,
+      "p99_ms": 0.1009,
+      "min_ms": 0.058,
+      "max_ms": 1.1476
+    },
+    "ML-KEM-768": {
+      "trials": 100,
+      "mean_ms": 0.1424,
+      "stddev_ms": 0.2621,
+      "median_ms": 0.1045,
+      "p95_ms": 0.117,
+      "p99_ms": 1.7847,
+      "min_ms": 0.0891,
+      "max_ms": 2.1336
+    },
+    "ML-KEM-1024": {
+      "trials": 100,
+      "mean_ms": 0.1699,
+      "stddev_ms": 0.0875,
+      "median_ms": 0.1608,
+      "p95_ms": 0.1762,
+      "p99_ms": 0.3388,
+      "min_ms": 0.1168,
+      "max_ms": 1.0091
+    },
+    "RSA-2048": {
+      "trials": 50,
+      "mean_ms": 50.5156,
+      "stddev_ms": 24.7759,
+      "median_ms": 45.224,
+      "p95_ms": 106.7328,
+      "p99_ms": 124.7889,
+      "min_ms": 16.2963,
+      "max_ms": 124.7889
+    },
+    "RSA-3072": {
+      "trials": 25,
+      "mean_ms": 211.1897,
+      "stddev_ms": 113.502,
+      "median_ms": 175.7918,
+      "p95_ms": 398.0827,
+      "p99_ms": 531.7245,
+      "min_ms": 79.5495,
+      "max_ms": 531.7245
+    },
+    "RSA-4096": {
+      "trials": 15,
+      "mean_ms": 639.957,
+      "stddev_ms": 288.4489,
+      "median_ms": 703.2485,
+      "p95_ms": 1159.4091,
+      "p99_ms": 1159.4091,
+      "min_ms": 93.2107,
+      "max_ms": 1159.4091
+    }
+  },
+  "key_establishment_encapsulation_or_wrap": {
+    "ML-KEM-512": {
+      "trials": 100,
+      "mean_ms": 0.0802,
+      "stddev_ms": 0.0045,
+      "median_ms": 0.0796,
+      "p95_ms": 0.0906,
+      "p99_ms": 0.0929,
+      "min_ms": 0.0653,
+      "max_ms": 0.0945
+    },
+    "ML-KEM-768": {
+      "trials": 100,
+      "mean_ms": 0.1253,
+      "stddev_ms": 0.0053,
+      "median_ms": 0.1247,
+      "p95_ms": 0.1355,
+      "p99_ms": 0.1381,
+      "min_ms": 0.1081,
+      "max_ms": 0.1415
+    },
+    "ML-KEM-1024": {
+      "trials": 100,
+      "mean_ms": 0.1049,
+      "stddev_ms": 0.0053,
+      "median_ms": 0.1028,
+      "p95_ms": 0.1153,
+      "p99_ms": 0.1276,
+      "min_ms": 0.102,
+      "max_ms": 0.1311
+    },
+    "RSA-2048": {
+      "trials": 100,
+      "mean_ms": 0.0247,
+      "stddev_ms": 0.0013,
+      "median_ms": 0.0243,
+      "p95_ms": 0.0276,
+      "p99_ms": 0.0305,
+      "min_ms": 0.024,
+      "max_ms": 0.0312
+    },
+    "RSA-3072": {
+      "trials": 100,
+      "mean_ms": 0.0481,
+      "stddev_ms": 0.0042,
+      "median_ms": 0.0461,
+      "p95_ms": 0.0596,
+      "p99_ms": 0.0622,
+      "min_ms": 0.0458,
+      "max_ms": 0.0625
+    },
+    "RSA-4096": {
+      "trials": 100,
+      "mean_ms": 0.0795,
+      "stddev_ms": 0.007,
+      "median_ms": 0.0763,
+      "p95_ms": 0.0933,
+      "p99_ms": 0.1006,
+      "min_ms": 0.0758,
+      "max_ms": 0.1204
+    }
+  },
+  "key_establishment_decapsulation_or_unwrap": {
+    "ML-KEM-512": {
+      "trials": 100,
+      "mean_ms": 0.0983,
+      "stddev_ms": 0.0094,
+      "median_ms": 0.0995,
+      "p95_ms": 0.1124,
+      "p99_ms": 0.1177,
+      "min_ms": 0.0696,
+      "max_ms": 0.1185
+    },
+    "ML-KEM-768": {
+      "trials": 100,
+      "mean_ms": 0.145,
+      "stddev_ms": 0.0223,
+      "median_ms": 0.1515,
+      "p95_ms": 0.1708,
+      "p99_ms": 0.191,
+      "min_ms": 0.0887,
+      "max_ms": 0.1913
+    },
+    "ML-KEM-1024": {
+      "trials": 100,
+      "mean_ms": 0.1423,
+      "stddev_ms": 0.0301,
+      "median_ms": 0.1273,
+      "p95_ms": 0.2219,
+      "p99_ms": 0.2331,
+      "min_ms": 0.126,
+      "max_ms": 0.2405
+    },
+    "RSA-2048": {
+      "trials": 100,
+      "mean_ms": 0.3961,
+      "stddev_ms": 0.0831,
+      "median_ms": 0.3972,
+      "p95_ms": 0.4267,
+      "p99_ms": 0.8767,
+      "min_ms": 0.3123,
+      "max_ms": 0.913
+    },
+    "RSA-3072": {
+      "trials": 100,
+      "mean_ms": 0.9348,
+      "stddev_ms": 0.1539,
+      "median_ms": 0.8825,
+      "p95_ms": 1.2101,
+      "p99_ms": 1.4959,
+      "min_ms": 0.8397,
+      "max_ms": 1.8807
+    },
+    "RSA-4096": {
+      "trials": 100,
+      "mean_ms": 1.9513,
+      "stddev_ms": 0.3375,
+      "median_ms": 1.7939,
+      "p95_ms": 2.5857,
+      "p99_ms": 2.731,
+      "min_ms": 1.7092,
+      "max_ms": 3.9258
+    }
+  },
+  "symmetric_aes_256_gcm": {
+    "1_KB": {
+      "payload_size_bytes": 1024,
+      "encryption": {
+        "trials": 100,
+        "mean_ms": 0.0016,
+        "stddev_ms": 0.0003,
+        "median_ms": 0.0015,
+        "p95_ms": 0.0017,
+        "p99_ms": 0.0027,
+        "min_ms": 0.0014,
+        "max_ms": 0.0034
+      },
+      "decryption": {
+        "trials": 100,
+        "mean_ms": 0.0016,
+        "stddev_ms": 0.0002,
+        "median_ms": 0.0015,
+        "p95_ms": 0.0018,
+        "p99_ms": 0.0024,
+        "min_ms": 0.0014,
+        "max_ms": 0.0032
+      }
+    },
+    "64_KB": {
+      "payload_size_bytes": 65536,
+      "encryption": {
+        "trials": 100,
+        "mean_ms": 0.0103,
+        "stddev_ms": 0.0051,
+        "median_ms": 0.0085,
+        "p95_ms": 0.0167,
+        "p99_ms": 0.0325,
+        "min_ms": 0.0079,
+        "max_ms": 0.0456
+      },
+      "decryption": {
+        "trials": 100,
+        "mean_ms": 0.0094,
+        "stddev_ms": 0.0032,
+        "median_ms": 0.0083,
+        "p95_ms": 0.0172,
+        "p99_ms": 0.024,
+        "min_ms": 0.0077,
+        "max_ms": 0.0254
+      }
+    },
+    "1_MB": {
+      "payload_size_bytes": 1048576,
+      "encryption": {
+        "trials": 100,
+        "mean_ms": 0.1634,
+        "stddev_ms": 0.2475,
+        "median_ms": 0.1234,
+        "p95_ms": 0.1741,
+        "p99_ms": 1.4694,
+        "min_ms": 0.1156,
+        "max_ms": 2.2139
+      },
+      "decryption": {
+        "trials": 100,
+        "mean_ms": 0.1484,
+        "stddev_ms": 0.074,
+        "median_ms": 0.1359,
+        "p95_ms": 0.167,
+        "p99_ms": 0.6553,
+        "min_ms": 0.1265,
+        "max_ms": 0.6616
+      }
+    }
+  },
+  "key_and_ciphertext_sizes": {
+    "ML-KEM-512": {
+      "primitive_type": "Lattice KEM (FIPS 203)",
+      "public_key_bytes": 800,
+      "private_key_bytes": 1632,
+      "ciphertext_or_encapsulation_bytes": 768,
+      "total_public_overhead_bytes": 1568
+    },
+    "ML-KEM-768": {
+      "primitive_type": "Lattice KEM (FIPS 203)",
+      "public_key_bytes": 1184,
+      "private_key_bytes": 2400,
+      "ciphertext_or_encapsulation_bytes": 1088,
+      "total_public_overhead_bytes": 2272
+    },
+    "ML-KEM-1024": {
+      "primitive_type": "Lattice KEM (FIPS 203)",
+      "public_key_bytes": 1568,
+      "private_key_bytes": 3168,
+      "ciphertext_or_encapsulation_bytes": 1568,
+      "total_public_overhead_bytes": 3136
+    },
+    "RSA-2048": {
+      "primitive_type": "Classical Factorization (RSA-OAEP)",
+      "public_key_bytes": 294,
+      "private_key_bytes": 1217,
+      "ciphertext_or_encapsulation_bytes": 256,
+      "total_public_overhead_bytes": 550
+    },
+    "RSA-3072": {
+      "primitive_type": "Classical Factorization (RSA-OAEP)",
+      "public_key_bytes": 422,
+      "private_key_bytes": 1793,
+      "ciphertext_or_encapsulation_bytes": 384,
+      "total_public_overhead_bytes": 806
+    },
+    "RSA-4096": {
+      "primitive_type": "Classical Factorization (RSA-OAEP)",
+      "public_key_bytes": 550,
+      "private_key_bytes": 2376,
+      "ciphertext_or_encapsulation_bytes": 512,
+      "total_public_overhead_bytes": 1062
+    }
+  }
+}

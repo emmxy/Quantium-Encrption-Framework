@@ -20,6 +20,8 @@ import os
 from typing import List, Dict, Optional, Tuple, Deque
 from collections import defaultdict, deque
 
+from threat_classifier import ThreatClassifierPipeline
+
 
 class ThreatDetection:
     """
@@ -65,6 +67,14 @@ class ThreatDetection:
             'iv_reuse_threshold': 1,  # Any IV reuse is suspicious
             'key_mismatch_threshold': 2  # 2+ key mismatches
         }
+
+        # Initialize supervised Random Forest IPS pipeline
+        self.rf_classifier = ThreatClassifierPipeline()
+        if not self.rf_classifier.load_artifacts():
+            try:
+                self.rf_classifier.train_and_evaluate()
+            except Exception as e:
+                print(f"Warning: Could not train RF classifier: {e}")
     
     def log_activity(self, activity_type: str, file_size: int = 0, 
                     success: bool = True, user_id: Optional[str] = None,
@@ -261,16 +271,12 @@ class ThreatDetection:
     def extract_features(self, activities: iter) -> np.ndarray:
         """
         Extract features from activity logs for ML analysis.
-        
-        Args:
-            activities: Iterable of activity dictionaries
-            
-        Returns:
-            Feature matrix as numpy array
+        Optimized to avoid O(N^2) list indexing.
         """
         features = []
+        activities_list = list(activities)
         
-        for activity in activities:
+        for idx, activity in enumerate(activities_list):
             user_id = activity.get('user_id', 'anonymous')
             session = self.user_sessions[user_id]
             
@@ -291,24 +297,65 @@ class ThreatDetection:
             
             # Add time-based features
             try:
-                activities_list = list(activities)
-                if len(activities_list) > 1:
-                    idx = activities_list.index(activity)
-                    if idx > 0:
-                        prev_time = datetime.fromisoformat(activities_list[idx - 1]['timestamp'])
-                        curr_time = datetime.fromisoformat(activity['timestamp'])
-                        time_diff = (curr_time - prev_time).total_seconds()
-                        feature_vector.append(time_diff)
-                    else:
-                        feature_vector.append(0)
+                if idx > 0:
+                    prev_time = datetime.fromisoformat(activities_list[idx - 1]['timestamp'])
+                    curr_time = datetime.fromisoformat(activity['timestamp'])
+                    time_diff = (curr_time - prev_time).total_seconds()
+                    feature_vector.append(time_diff)
                 else:
-                    feature_vector.append(0)
-            except:
-                feature_vector.append(0)
+                    feature_vector.append(0.0)
+            except Exception:
+                feature_vector.append(0.0)
             
             features.append(feature_vector)
         
         return np.array(features)
+
+    def classify_request(
+        self,
+        method: str,
+        path: str,
+        query: str,
+        body: str,
+        client_ip: str,
+        crypto_fail: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Classify incoming HTTP request using Random Forest IPS pipeline
+        and escalate session risk accordingly.
+        """
+        session = self.user_sessions[client_ip]
+        recent_ops = self._count_recent_operations(client_ip, minutes=1)
+        res = self.rf_classifier.predict_request(
+            method=method,
+            path=path,
+            query=query,
+            body=body,
+            request_rate=float(recent_ops),
+            crypto_fail=crypto_fail
+        )
+        if res['is_attack']:
+            severity_points = {
+                'sqli': 45.0,
+                'xss': 40.0,
+                'path_traversal': 50.0,
+                'crypto_anomaly': 35.0,
+                'rate_abuse': 40.0
+            }
+            pts = severity_points.get(res['predicted_class'], 25.0)
+            session['risk_score'] = min(100.0, session['risk_score'] + pts)
+            self._log_security_event(
+                client_ip,
+                f"rf_ips_{res['predicted_class']}_detected",
+                {
+                    'path': path,
+                    'method': method,
+                    'confidence': res['confidence'],
+                    'probabilities': res['probabilities']
+                },
+                severity='high' if pts >= 40.0 else 'medium'
+            )
+        return res
     
     def train_model(self) -> None:
         """Train the threat detection model on logged activities."""
